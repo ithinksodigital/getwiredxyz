@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wired — Ethernet status in your menu bar</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%230071e3'/%3E%3Crect x='5' y='6' width='14' height='9' rx='1.5' stroke='white' stroke-width='1.8' fill='none'/%3E%3Crect x='7' y='15' width='1.5' height='3' fill='white'/%3E%3Crect x='11.25' y='15' width='1.5' height='3' fill='white'/%3E%3Crect x='15.5' y='15' width='1.5' height='3' fill='white'/%3E%3C/svg%3E" type="image/svg+xml" />
+  <meta name="description" content="Lightweight macOS menu bar app. Monitor Ethernet connection, see IP, MAC, and interface details at a glance." />
+  <meta property="og:title" content="Wired — Ethernet status in your menu bar" />
+  <meta property="og:description" content="Lightweight macOS menu bar app. Monitor Ethernet, see IP, MAC, and interface details at a glance." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://getwired.xyz" />
+  <!-- og:image: add a screenshot here once ready -->
+  <!-- <meta property="og:image" content="https://getwired.xyz/og.png" /> -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Wired — Ethernet status in your menu bar" />
+  <meta name="twitter:description" content="Lightweight macOS menu bar app. Monitor Ethernet, see IP, MAC, and interface details." />
+  <link rel="canonical" href="https://getwired.xyz" />
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --surface: #ffffff;
+      --border: #d2d2d7;
+      --text: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --accent: #0071e3;
+      --accent-hover: #0077ed;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
+    }
+
+    html.dark {
+      --bg: #0d0d0f;
+      --surface: #1c1c1e;
+      --border: #38383a;
+      --text: #f5f5f7;
+      --text-secondary: #98989d;
+      --accent: #0a84ff;
+      --accent-hover: #409cff;
+      --shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .skip-link {
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 500;
+      border-radius: 8px;
+      z-index: 100;
+      transition: top 0.2s;
+    }
+    .skip-link:focus { top: 16px; outline: 2px solid var(--text); outline-offset: 2px; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(0, 113, 227, 0.08), transparent 50%),
+                  linear-gradient(180deg, #f8f8fa 0%, var(--bg) 25%);
+      color: var(--text);
+      line-height: 1.55;
+      min-height: 100vh;
+      font-size: 17px;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+
+    html.dark body {
+      background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(10, 132, 255, 0.15), transparent 50%),
+                  linear-gradient(180deg, #131316 0%, var(--bg) 25%);
+    }
+
+    /* ─── BACKGROUND ORBS ─────────────────────────── */
+    .bg-orbs {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .bg-orbs .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.75;
+      will-change: transform;
+      animation: orb-float 12s ease-in-out infinite;
+    }
+    .bg-orbs .orb-1 {
+      width: 420px; height: 420px;
+      background: radial-gradient(circle at 30% 30%, rgba(0, 113, 227, 0.55) 0%, rgba(0, 113, 227, 0.2) 40%, transparent 65%);
+      top: 5%; left: 50%; margin-left: -320px;
+      animation-delay: 0s;
+    }
+    .bg-orbs .orb-2 {
+      width: 360px; height: 360px;
+      background: radial-gradient(circle at 60% 40%, rgba(90, 200, 250, 0.5) 0%, rgba(90, 200, 250, 0.18) 40%, transparent 65%);
+      top: 45%; right: 10%;
+      animation-delay: -4s;
+    }
+    .bg-orbs .orb-3 {
+      width: 320px; height: 320px;
+      background: radial-gradient(circle at 40% 50%, rgba(0, 113, 227, 0.45) 0%, rgba(0, 113, 227, 0.15) 40%, transparent 65%);
+      bottom: 20%; left: 8%;
+      animation-delay: -8s;
+    }
+    @keyframes orb-float {
+      0%,100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(60px, -50px) scale(1.08); }
+      50% { transform: translate(-40px, 60px) scale(0.92); }
+      75% { transform: translate(40px, 30px) scale(1.05); }
+    }
+    html.dark .bg-orbs .orb { opacity: 0.65; }
+    html.dark .bg-orbs .orb-1 { background: radial-gradient(circle at 30% 30%, rgba(10, 132, 255, 0.4) 0%, rgba(10, 132, 255, 0.12) 40%, transparent 70%); }
+    html.dark .bg-orbs .orb-2 { background: radial-gradient(circle at 60% 40%, rgba(100, 181, 255, 0.35) 0%, rgba(100, 181, 255, 0.1) 40%, transparent 70%); }
+    html.dark .bg-orbs .orb-3 { background: radial-gradient(circle at 40% 50%, rgba(10, 132, 255, 0.3) 0%, rgba(10, 132, 255, 0.08) 40%, transparent 70%); }
+    @media (prefers-reduced-motion: reduce) { .bg-orbs .orb { animation: none; } }
+
+    /* ─── SCROLL REVEAL ───────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+    }
+    .reveal.is-visible { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    /* ─── NAV ─────────────────────────────────────── */
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      padding: 0 32px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(245, 245, 247, 0.82);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+      transition: background 0.2s, border-color 0.2s;
+    }
+    html.dark .site-nav {
+      background: rgba(13, 13, 15, 0.82);
+      border-bottom-color: rgba(255, 255, 255, 0.06);
+    }
+    .nav-logo {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      margin-right: 8px;
+    }
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); background: rgba(0, 0, 0, 0.04); }
+    html.dark .nav-links a:hover { background: rgba(255, 255, 255, 0.06); }
+
+    .nav-download {
+      font-size: 14px;
+      font-weight: 500;
+      padding: 7px 14px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 980px;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.2s;
+      margin-right: 8px;
+    }
+    .nav-download:hover { background: var(--accent-hover); transform: scale(1.02); }
+
+    .theme-toggle {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+    .theme-toggle:hover { color: var(--text); background: rgba(0, 0, 0, 0.04); }
+    html.dark .theme-toggle:hover { background: rgba(255, 255, 255, 0.06); }
+    .theme-toggle svg { width: 18px; height: 18px; }
+    .theme-toggle .icon-dark { display: none; }
+    .theme-toggle .icon-light { display: block; }
+    html.dark .theme-toggle .icon-dark { display: block; }
+    html.dark .theme-toggle .icon-light { display: none; }
+
+    @media (max-width: 540px) {
+      .nav-links { display: none; }
+      .site-nav { padding: 0 20px; }
+    }
+
+    /* ─── HERO ────────────────────────────────────── */
+    header {
+      padding: 64px 0 56px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 40px;
+      align-items: center;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    @media (min-width: 720px) {
+      header {
+        grid-template-columns: minmax(320px, 1fr) minmax(360px, 1fr);
+        gap: 56px;
+        padding: 80px 0 64px;
+        text-align: left;
+      }
+    }
+
+    .logo, .tagline, .hero-actions, .menubar-mock-wrap {
+      animation: hero-in 0.7s ease-out backwards;
+    }
+    .logo { animation-delay: 0.05s; }
+    .tagline { animation-delay: 0.12s; }
+    .hero-actions { animation-delay: 0.2s; }
+    .menubar-mock-wrap { animation-delay: 0.28s; }
+
+    @keyframes hero-in {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-eyebrow {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    .logo {
+      font-size: clamp(44px, 11vw, 56px);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      margin: 0 0 14px 0;
+      color: var(--text);
+      line-height: 1.1;
+    }
+    @media (min-width: 720px) { .logo { font-size: 56px; } }
+
+    @supports (background-clip: text) or (-webkit-background-clip: text) {
+      .logo {
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+        background: linear-gradient(135deg, #1d1d1f 0%, #0071e3 45%, #5ac8fa 100%);
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        animation: logo-gradient 12s ease-in-out infinite;
+      }
+    }
+    @keyframes logo-gradient {
+      0%,100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .tagline {
+      font-size: 17px;
+      color: var(--text-secondary);
+      font-weight: 400;
+      margin: 0 0 24px 0;
+      line-height: 1.55;
+      max-width: 440px;
+    }
+    @media (min-width: 720px) { .tagline { font-size: 18px; margin-bottom: 28px; max-width: 480px; } }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 5px 12px;
+      background: var(--surface);
+      border-radius: 100px;
+      color: var(--text-secondary);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      letter-spacing: 0.03em;
+      border: 1px solid var(--border);
+    }
+    .badge-alt { background: transparent; }
+
+    /* ─── MOCK ────────────────────────────────────── */
+    .menubar-mock-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+    .menubar-mock {
+      margin: 0 auto;
+      max-width: 100%;
+      width: 100%;
+      min-width: 0;
+      padding-bottom: 220px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      overflow: visible;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 20px 40px rgba(0, 0, 0, 0.15), 0 0 80px -20px rgba(0, 113, 227, 0.2);
+    }
+
+    .mac-menubar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 28px;
+      min-width: 0;
+      padding: 0 10px 0 12px;
+      background: rgba(246, 246, 246, 0.85);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border: 0;
+      border-radius: var(--radius) var(--radius) 0 0;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .mac-menubar-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+      overflow-x: hidden;
+    }
+    .mac-menubar-left span:not(.menu-icon) { flex-shrink: 0; }
+    .mac-menubar-left .menu-icon { width: 16px; height: 12px; flex-shrink: 0; opacity: 0.9; }
+    .mac-menubar-left .menu-icon svg { display: block; width: 100%; height: 100%; }
+    .mac-menubar-left span:not(.menu-icon) { color: var(--text); opacity: 0.95; }
+
+    .mac-menubar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .mac-menubar-right .mb-icon { width: 18px; height: 18px; opacity: 0.9; }
+    .mac-menubar-right .mb-icon svg { display: block; width: 100%; height: 100%; }
+
+    .wired-in-menubar-wrap {
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+    }
+    .wired-in-menubar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 8px;
+      margin: 0 -4px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.04);
+      transition: background 0.15s;
+    }
+    .wired-in-menubar-wrap:hover .wired-in-menubar,
+    .wired-in-menubar-wrap.is-open .wired-in-menubar {
+      background: rgba(0, 113, 227, 0.12);
+    }
+
+    .wired-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 6px;
+      margin-right: -40px;
+      min-width: 260px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+      padding: 6px 0;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text);
+      z-index: 20;
+      opacity: 0;
+      transform: translateY(-6px) scale(0.98);
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    .wired-in-menubar-wrap.is-open .wired-dropdown {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .mock-hint {
+      font-size: 12px;
+      color: var(--text-secondary);
+      opacity: 0.65;
+      letter-spacing: 0.01em;
+      transition: opacity 0.4s ease;
+    }
+    .mock-hint.hidden { opacity: 0; }
+
+    .wired-dropdown .item {
+      padding: 4px 12px 4px 20px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .wired-dropdown .item-nowrap { overflow: hidden; text-overflow: ellipsis; }
+    .wired-dropdown .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #34c759;
+      flex-shrink: 0;
+    }
+    html.dark .wired-dropdown .status-dot { background: #30d158; }
+    .wired-dropdown .item.sub { padding-left: 24px; font-size: 12px; color: var(--text-secondary); }
+    .wired-dropdown .sep { height: 1px; background: rgba(0, 0, 0, 0.08); margin: 4px 8px; }
+    .wired-in-menubar .menubar-icon { width: 18px; height: 18px; }
+    .wired-in-menubar .menubar-iface { font-size: 13px; font-weight: 500; }
+
+    /* ─── STATS ROW ───────────────────────────────── */
+    .stats-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: stretch;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 56px;
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .stat-item svg { width: 15px; height: 15px; color: var(--accent); flex-shrink: 0; }
+    .stat-divider { width: 1px; background: var(--border); margin: 10px 0; }
+
+    @media (max-width: 640px) {
+      .stat-item { padding: 10px 16px; font-size: 13px; }
+    }
+    @media (max-width: 440px) {
+      .stats-row { flex-direction: column; align-items: center; }
+      .stat-divider { display: none; }
+      .stat-item { padding: 7px 16px; }
+    }
+
+    /* ─── SECTIONS ────────────────────────────────── */
+    section { padding: 56px 0; }
+    section h2 {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    section > p.subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .features { display: grid; gap: 14px; }
+    .feature {
+      padding: 22px 24px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    }
+    .feature:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border-color: rgba(0, 0, 0, 0.08); }
+    .feature h3 { font-size: 17px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    .feature p { font-size: 15px; color: var(--text-secondary); line-height: 1.5; }
+
+    /* ─── HOW IT WORKS ────────────────────────────── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 8px;
+    }
+    @media (max-width: 640px) { .steps { grid-template-columns: 1fr; } }
+
+    .step {
+      position: relative;
+      padding: 26px 24px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      transition: box-shadow 0.2s ease;
+    }
+    .step:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: rgba(0, 113, 227, 0.1);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+    html.dark .step-num { background: rgba(10, 132, 255, 0.15); }
+    .step h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    .step p { font-size: 14px; color: var(--text-secondary); line-height: 1.55; }
+
+    @media (min-width: 641px) {
+      .step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 41px;
+        right: -12px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--border);
+        z-index: 1;
+      }
+    }
+
+    /* ─── PRIVACY CALLOUT ─────────────────────────── */
+    .privacy-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 24px 28px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    .privacy-icon {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(52, 199, 89, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #34c759;
+    }
+    html.dark .privacy-icon { background: rgba(48, 209, 88, 0.15); color: #30d158; }
+    .privacy-icon svg { width: 22px; height: 22px; }
+    .privacy-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+    .privacy-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.55; }
+
+    /* ─── CTA ─────────────────────────────────────── */
+    .cta { text-align: center; padding: 32px 0 48px; }
+    .cta h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+    .cta p { color: var(--text-secondary); font-size: 15px; margin-bottom: 24px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 500;
+      padding: 12px 24px;
+      border-radius: 980px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+      margin: 0 8px 8px 0;
+    }
+    .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .btn.primary { background: var(--accent); color: #fff; border: none; }
+    .btn.primary:hover { background: var(--accent-hover); box-shadow: 0 4px 12px rgba(0, 113, 227, 0.35); transform: scale(1.02); }
+    .btn.primary:active { transform: scale(0.98); }
+    .btn.secondary { background: var(--surface); color: var(--accent); border: 1px solid var(--border); }
+    .btn.secondary:hover { background: #f0f4fa; border-color: var(--accent); }
+
+    footer {
+      padding: 48px 0 56px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-secondary);
+      border-top: 1px solid var(--border);
+      margin-top: 32px;
+    }
+    footer p { max-width: 360px; margin: 0 auto; line-height: 1.5; }
+    footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    footer a:hover { text-decoration: underline; }
+
+    .cookie-settings-link {
+      border: 0; background: transparent; padding: 0; margin: 0;
+      font: inherit; color: var(--accent); text-decoration: none;
+      font-weight: 500; cursor: pointer;
+    }
+    .cookie-settings-link:hover { text-decoration: underline; }
+
+    /* ─── RESPONSIVE ──────────────────────────────── */
+    @media (max-width: 719px) {
+      .hero-text { text-align: center; }
+      .tagline { max-width: none; margin-left: auto; margin-right: auto; }
+      .hero-actions { justify-content: center; }
+    }
+    @media (max-width: 640px) {
+      header { padding: 48px 0 36px; }
+      .logo { font-size: 48px; }
+      .tagline { font-size: 16px; }
+      .menubar-mock { padding-bottom: 260px; }
+      .mac-menubar { position: relative; }
+      .mac-menubar-left span:not(.menu-icon) { display: none; }
+      .mac-menubar-left span.menu-icon { display: flex; }
+      .wired-in-menubar-wrap { position: static; }
+      .wired-dropdown {
+        top: calc(100% + 6px);
+        left: 50%;
+        right: auto;
+        margin-right: 0;
+        min-width: min(260px, calc(100vw - 56px));
+        max-width: calc(100vw - 56px);
+        transform: translateX(-50%) translateY(-6px) scale(0.98);
+      }
+      .wired-in-menubar-wrap.is-open .wired-dropdown {
+        transform: translateX(-50%) translateY(0) scale(1);
+      }
+      .wired-dropdown .item { white-space: normal; align-items: flex-start; line-height: 1.35; }
+      .wired-dropdown .item-nowrap { white-space: nowrap; }
+      section { padding: 40px 0; }
+      section h2 { font-size: 22px; }
+      .feature { padding: 18px 18px; }
+    }
+
+    /* ─── DARK OVERRIDES ──────────────────────────── */
+    html.dark .logo { color: #f5f5f7; }
+    @supports (background-clip: text) or (-webkit-background-clip: text) {
+      html.dark .logo {
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+        background: linear-gradient(90deg, #f5f5f7, #0a84ff, #64b5ff, #0a84ff, #f5f5f7);
+        background-size: 300% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+    }
+    html.dark .menubar-mock {
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 20px 40px rgba(0,0,0,0.4), 0 0 80px -20px rgba(10, 132, 255, 0.25);
+    }
+    html.dark .mac-menubar { background: rgba(44, 44, 46, 0.9); border-bottom-color: rgba(255,255,255,0.06); }
+    html.dark .wired-in-menubar { background: rgba(255, 255, 255, 0.08); }
+    html.dark .wired-dropdown {
+      background: rgba(44, 44, 46, 0.95);
+      border-color: rgba(255,255,255,0.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    html.dark .wired-dropdown .sep { background: rgba(255,255,255,0.08); }
+    html.dark .btn.secondary:hover { background: rgba(10, 132, 255, 0.15); }
+    html.dark .feature:hover,
+    html.dark .step:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+    /* ─── COOKIE BANNER ───────────────────────────── */
+    .cookie-banner {
+      position: fixed;
+      left: 16px; right: 16px; bottom: 16px;
+      z-index: 80;
+      display: none;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .cookie-banner.show { display: flex; }
+    .cookie-banner p { margin: 0; font-size: 14px; color: var(--text-secondary); max-width: 780px; }
+    .cookie-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .cookie-actions .btn { margin: 0; padding: 8px 14px; font-size: 14px; }
+    @media (max-width: 640px) {
+      .cookie-banner { flex-direction: column; align-items: flex-start; }
+      .cookie-actions { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="site-nav" aria-label="Site navigation">
+    <a href="#main" class="nav-logo">Wired</a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+      </div>
+      <a href="https://getwired.xyz" class="nav-download" data-track-event="download_click" data-track-location="nav">Download</a>
+      <button type="button" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <span class="icon-light" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg></span>
+        <span class="icon-dark" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="container" id="main">
+    <header>
+      <div class="hero-text">
+        <p class="hero-eyebrow" aria-hidden="true">Menu bar app</p>
+        <h1 class="logo">Wired</h1>
+        <p class="tagline">Ethernet status in your menu bar. IP, MAC, interface details and connection checks at a glance.</p>
+        <div class="hero-actions">
+          <a href="https://getwired.xyz" class="btn primary" data-track-event="download_click" data-track-location="hero">Download</a>
+          <span class="badge badge-alt">macOS 13+</span>
+          <span class="badge badge-alt">Free</span>
+        </div>
+      </div>
+
+      <div class="menubar-mock-wrap">
+        <div class="menubar-mock">
+          <div class="mac-menubar">
+            <div class="mac-menubar-left">
+              <span class="menu-icon" aria-hidden="true" title="Menu"><svg viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="0" y1="2" x2="16" y2="2"/><line x1="0" y1="6" x2="16" y2="6"/><line x1="0" y1="10" x2="16" y2="10"/></svg></span>
+              <span>Finder</span>
+              <span>File</span>
+              <span>Edit</span>
+              <span>View</span>
+              <span>Window</span>
+              <span>Help</span>
+            </div>
+            <div class="mac-menubar-right">
+              <span class="wired-in-menubar-wrap" id="mockToggle" role="button" aria-label="Toggle Wired menu demo" aria-expanded="false" tabindex="0">
+                <span class="wired-in-menubar">
+                  <span class="menubar-icon" aria-hidden="true">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <rect x="3.5" y="3.5" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M8 3.5 L8 5.5 L12 5.5 L12 3.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                      <rect x="6.5" y="13" width="1" height="2.1" fill="currentColor"/>
+                      <rect x="8.5" y="13" width="1" height="2.1" fill="currentColor"/>
+                      <rect x="10.5" y="13" width="1" height="2.1" fill="currentColor"/>
+                      <rect x="12.5" y="13" width="1" height="2.1" fill="currentColor"/>
+                    </svg>
+                  </span>
+                  <span class="menubar-iface">en0</span>
+                </span>
+                <div class="wired-dropdown" role="menu" aria-label="Wired menu preview">
+                  <div class="item status-connected"><span class="status-dot"></span>Ethernet Status: Connected</div>
+                  <div class="item">Default Route Interface: en0</div>
+                  <div class="sep"></div>
+                  <div class="item item-nowrap">en0 (USB 10/100/1000 LAN) • connected, active route</div>
+                  <div class="item sub">Status: Connected</div>
+                  <div class="item sub">IPv4: 192.168.1.42</div>
+                  <div class="item sub">Copy IPv4 · Copy MAC · Ping gateway</div>
+                  <div class="sep"></div>
+                  <div class="item">Launch at Login</div>
+                  <div class="sep"></div>
+                  <a href="https://getwired.xyz" class="item" style="text-decoration:none;color:inherit;">getwired.xyz</a>
+                  <div class="sep"></div>
+                  <div class="item">Quit</div>
+                </div>
+              </span>
+              <span class="mb-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20v-4m0-4v4m0-4a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M5 9a7 7 0 0 1 14 0"/></svg>
+              </span>
+              <span class="mb-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="8" width="16" height="10" rx="1.5"/><path d="M7 6v2h10V6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+              </span>
+              <span style="font-size: 12px; opacity: 0.9;">10:42</span>
+            </div>
+          </div>
+        </div>
+        <p class="mock-hint" id="mockHint" aria-hidden="true">↑ Click the icon to preview the menu</p>
+      </div>
+    </header>
+
+    <!-- Stats strip -->
+    <div class="stats-row reveal" role="list" aria-label="App highlights">
+      <div class="stat-item" role="listitem">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Native Swift
+      </div>
+      <div class="stat-divider" aria-hidden="true"></div>
+      <div class="stat-item" role="listitem">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+        &lt; 5 MB
+      </div>
+      <div class="stat-divider" aria-hidden="true"></div>
+      <div class="stat-item" role="listitem">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        No account needed
+      </div>
+    </div>
+
+    <section id="features" class="reveal">
+      <h2>Features</h2>
+      <p class="subtitle">What you get when Wired runs in your menu bar.</p>
+      <div class="features">
+        <div class="feature">
+          <h3>Status at a glance</h3>
+          <p>RJ45 icon in the menu bar shows connected or disconnected. Active interface name (e.g. en0) when wired. No extra window, no dock icon.</p>
+        </div>
+        <div class="feature">
+          <h3>Connection details</h3>
+          <p>Quickly check whether Ethernet is connected and see current interface details directly from the menu.</p>
+        </div>
+        <div class="feature">
+          <h3>Interface details</h3>
+          <p>From the menu: IPv4, IPv6, MAC, vendor, model, default route. Copy IP or MAC to clipboard with one click.</p>
+        </div>
+        <div class="feature">
+          <h3>Quick checks</h3>
+          <p>Ping gateway or 8.8.8.8 from the menu. Launch at login so status is always there after reboot.</p>
+        </div>
+      </div>
+      <p class="subtitle" style="margin-top:16px;font-size:14px;">Requires macOS 13+. Best tested on macOS Tahoe.</p>
+    </section>
+
+    <section id="how-it-works" class="reveal">
+      <h2>How it works</h2>
+      <p class="subtitle">Up and running in under a minute.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Download the DMG</h3>
+          <p>Grab the latest release from GitHub. No installer, no App Store, no account required.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Open and run</h3>
+          <p>Drag Wired to Applications and launch it. macOS may ask for network permissions on the first run.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Always in your menu bar</h3>
+          <p>Ethernet status is live in your menu bar. Enable "Launch at Login" to keep it across reboots.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="reveal" style="padding-top: 0;">
+      <h2>Privacy first</h2>
+      <div class="privacy-card">
+        <div class="privacy-icon" aria-hidden="true">
+          <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <h3>Everything stays on your Mac</h3>
+          <p>No analytics inside the app. No cloud sync. No account. No background services outside your session. Wired reads only the network interfaces macOS exposes locally — nothing leaves your machine.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta reveal">
+      <h2>Get Wired</h2>
+      <p>Download the app or browse the source code on GitHub.</p>
+      <a href="https://getwired.xyz" class="btn primary" data-track-event="download_click" data-track-location="cta">Download</a>
+      <a href="https://github.com/ithinksodigital/Wired" class="btn secondary" data-track-event="github_click" data-track-location="cta">View on GitHub</a>
+      <a href="https://github.com/ithinksodigital/Wired/releases" class="btn secondary" data-track-event="changelog_click" data-track-location="cta">Changelog</a>
+    </section>
+
+    <footer>
+      <p>Wired — no account needed. Ethernet only. <a href="https://getwired.xyz" data-track-event="download_click" data-track-location="footer">getwired.xyz</a> · <a href="https://github.com/ithinksodigital/Wired" data-track-event="github_click" data-track-location="footer">GitHub</a> · <a href="https://github.com/ithinksodigital/Wired/releases" data-track-event="changelog_click" data-track-location="footer">Changelog</a> · <button type="button" class="cookie-settings-link" id="cookie-settings-link">Cookie settings</button></p>
+    </footer>
+  </div>
+
+  <div class="cookie-banner" id="cookie-banner" role="dialog" aria-live="polite" aria-label="Cookie consent">
+    <p>We use optional analytics cookies (Google Analytics) to measure traffic, GitHub clicks, and download clicks. Analytics starts only after your consent.</p>
+    <div class="cookie-actions">
+      <button type="button" class="btn secondary" id="cookie-reject">Reject</button>
+      <button type="button" class="btn primary" id="cookie-accept">Accept analytics</button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var GA_MEASUREMENT_ID = 'G-XXXXXXXXXX';
+      var COOKIE_CONSENT_KEY = 'wired-cookie-consent';
+      var analyticsLoaded = false;
+
+      function canEnableAnalytics() {
+        return GA_MEASUREMENT_ID && GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX';
+      }
+
+      function setAnalyticsEnabled(enabled) {
+        if (!canEnableAnalytics()) return;
+        window['ga-disable-' + GA_MEASUREMENT_ID] = !enabled;
+      }
+
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { window.dataLayer.push(arguments); }
+
+      function loadAnalytics() {
+        if (analyticsLoaded || !canEnableAnalytics()) return;
+        analyticsLoaded = true;
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(GA_MEASUREMENT_ID);
+        document.head.appendChild(script);
+        gtag('js', new Date());
+        gtag('config', GA_MEASUREMENT_ID, { anonymize_ip: true });
+      }
+
+      function trackEvent(eventName, params) {
+        if (!analyticsLoaded) return;
+        if (localStorage.getItem(COOKIE_CONSENT_KEY) !== 'accepted') return;
+        gtag('event', eventName, params || {});
+      }
+
+      function applyConsentState(consent) {
+        var banner = document.getElementById('cookie-banner');
+        if (!banner) return;
+        if (consent === 'accepted') {
+          banner.classList.remove('show');
+          setAnalyticsEnabled(true);
+          loadAnalytics();
+          return;
+        }
+        if (consent === 'rejected') {
+          banner.classList.remove('show');
+          setAnalyticsEnabled(false);
+          return;
+        }
+        setAnalyticsEnabled(false);
+        banner.classList.add('show');
+      }
+
+      // Theme
+      var saved = localStorage.getItem('wired-theme');
+      if (saved === 'dark') document.documentElement.classList.add('dark');
+      else if (saved === 'light') document.documentElement.classList.remove('dark');
+      else document.documentElement.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+      document.querySelector('.theme-toggle').addEventListener('click', function() {
+        var isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('wired-theme', isDark ? 'dark' : 'light');
+      });
+
+      // Scroll reveal
+      var reveals = document.querySelectorAll('.reveal');
+      function checkReveal() {
+        reveals.forEach(function(el) {
+          var rect = el.getBoundingClientRect();
+          if (rect.top < window.innerHeight - 80) el.classList.add('is-visible');
+        });
+      }
+      checkReveal();
+      window.addEventListener('scroll', checkReveal, { passive: true });
+
+      // Interactive mock — auto-opens after a short delay, then toggles on click
+      var mockToggle = document.getElementById('mockToggle');
+      var mockHint = document.getElementById('mockHint');
+
+      if (mockToggle) {
+        setTimeout(function() {
+          mockToggle.classList.add('is-open');
+          mockToggle.setAttribute('aria-expanded', 'true');
+        }, 900);
+
+        mockToggle.addEventListener('click', function() {
+          var isOpen = this.classList.toggle('is-open');
+          this.setAttribute('aria-expanded', String(isOpen));
+          if (mockHint) mockHint.classList.add('hidden');
+        });
+
+        mockToggle.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            var isOpen = this.classList.toggle('is-open');
+            this.setAttribute('aria-expanded', String(isOpen));
+            if (mockHint) mockHint.classList.add('hidden');
+          }
+        });
+      }
+
+      // Cookie consent
+      var consent = localStorage.getItem(COOKIE_CONSENT_KEY);
+      applyConsentState(consent);
+
+      var acceptButton = document.getElementById('cookie-accept');
+      var rejectButton = document.getElementById('cookie-reject');
+      var cookieSettingsLink = document.getElementById('cookie-settings-link');
+
+      if (acceptButton) {
+        acceptButton.addEventListener('click', function() {
+          localStorage.setItem(COOKIE_CONSENT_KEY, 'accepted');
+          applyConsentState('accepted');
+        });
+      }
+      if (rejectButton) {
+        rejectButton.addEventListener('click', function() {
+          localStorage.setItem(COOKIE_CONSENT_KEY, 'rejected');
+          applyConsentState('rejected');
+        });
+      }
+      if (cookieSettingsLink) {
+        cookieSettingsLink.addEventListener('click', function() {
+          localStorage.removeItem(COOKIE_CONSENT_KEY);
+          applyConsentState(null);
+        });
+      }
+
+      document.querySelectorAll('[data-track-event]').forEach(function(link) {
+        link.addEventListener('click', function() {
+          var eventName = link.getAttribute('data-track-event');
+          if (!eventName) return;
+          trackEvent(eventName, {
+            link_url: link.href,
+            link_text: (link.textContent || '').trim(),
+            location: link.getAttribute('data-track-location') || 'unknown'
+          });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
