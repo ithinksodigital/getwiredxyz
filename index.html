@@ -430,15 +430,6 @@
       pointer-events: auto;
     }
 
-    .mock-hint {
-      font-size: 12px;
-      color: var(--text-secondary);
-      opacity: 0.65;
-      letter-spacing: 0.01em;
-      transition: opacity 0.4s ease;
-    }
-    .mock-hint.hidden { opacity: 0; }
-
     .wired-dropdown .item {
       padding: 4px 12px 4px 20px;
       white-space: nowrap;
@@ -467,7 +458,8 @@
       align-items: stretch;
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
-      margin-bottom: 56px;
+      margin-top: 48px;
+      margin-bottom: 24px;
     }
     .stat-item {
       display: flex;
@@ -492,6 +484,7 @@
 
     /* ─── SECTIONS ────────────────────────────────── */
     section { padding: 56px 0; }
+    section#features { padding-top: 36px; }
     section h2 {
       font-size: 24px;
       font-weight: 600;
@@ -670,8 +663,8 @@
       }
       .wired-dropdown .item { white-space: normal; align-items: flex-start; line-height: 1.35; }
       .wired-dropdown .item-nowrap { white-space: nowrap; }
-      .mock-hint { display: none; }
       section { padding: 40px 0; }
+      section#features { padding-top: 28px; }
       section h2 { font-size: 22px; }
       .feature { padding: 18px 18px; }
     }
@@ -818,7 +811,6 @@
             </div>
           </div>
         </div>
-        <p class="mock-hint" id="mockHint" aria-hidden="true">↑ Click the icon to preview the menu</p>
       </div>
     </header>
 
@@ -997,7 +989,6 @@
 
       // Interactive mock — auto-opens after a short delay, then toggles on click
       var mockToggle = document.getElementById('mockToggle');
-      var mockHint = document.getElementById('mockHint');
 
       if (mockToggle) {
         setTimeout(function() {
@@ -1008,7 +999,6 @@
         mockToggle.addEventListener('click', function() {
           var isOpen = this.classList.toggle('is-open');
           this.setAttribute('aria-expanded', String(isOpen));
-          if (mockHint) mockHint.classList.add('hidden');
         });
 
         mockToggle.addEventListener('keydown', function(e) {
@@ -1016,7 +1006,6 @@
             e.preventDefault();
             var isOpen = this.classList.toggle('is-open');
             this.setAttribute('aria-expanded', String(isOpen));
-            if (mockHint) mockHint.classList.add('hidden');
           }
         });
       }
