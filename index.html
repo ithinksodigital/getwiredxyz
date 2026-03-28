@@ -231,10 +231,10 @@
 
     /* ─── HERO ────────────────────────────────────── */
     header {
-      padding: 64px 0 56px;
+      padding: 72px 0 64px;
       display: grid;
       grid-template-columns: 1fr;
-      gap: 40px;
+      gap: 44px;
       align-items: center;
       max-width: 100%;
       margin: 0 auto;
@@ -242,8 +242,8 @@
     @media (min-width: 720px) {
       header {
         grid-template-columns: minmax(320px, 1fr) minmax(360px, 1fr);
-        gap: 56px;
-        padding: 80px 0 64px;
+        gap: 64px;
+        padding: 96px 0 72px;
         text-align: left;
       }
     }
@@ -263,23 +263,23 @@
 
     .hero-eyebrow {
       display: inline-block;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.16em;
       color: var(--accent);
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .logo {
-      font-size: clamp(44px, 11vw, 56px);
+      font-size: clamp(48px, 12vw, 64px);
       font-weight: 700;
       letter-spacing: -0.04em;
-      margin: 0 0 14px 0;
+      margin: 0 0 18px 0;
       color: var(--text);
-      line-height: 1.1;
+      line-height: 1.08;
     }
-    @media (min-width: 720px) { .logo { font-size: 56px; } }
+    @media (min-width: 720px) { .logo { font-size: 64px; } }
 
     @supports (background-clip: text) or (-webkit-background-clip: text) {
       .logo {
@@ -298,27 +298,32 @@
     }
 
     .tagline {
-      font-size: 17px;
+      font-size: 18px;
       color: var(--text-secondary);
       font-weight: 400;
-      margin: 0 0 24px 0;
+      margin: 0 0 28px 0;
       line-height: 1.55;
-      max-width: 440px;
+      max-width: 460px;
     }
-    @media (min-width: 720px) { .tagline { font-size: 18px; margin-bottom: 28px; max-width: 480px; } }
+    @media (min-width: 720px) { .tagline { font-size: 20px; margin-bottom: 32px; max-width: 520px; } }
 
     .hero-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 14px;
       align-items: center;
+    }
+
+    .hero-actions .btn.primary {
+      font-size: 16px;
+      padding: 14px 28px;
     }
 
     .badge {
       display: inline-block;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 500;
-      padding: 5px 12px;
+      padding: 6px 14px;
       background: var(--surface);
       border-radius: 100px;
       color: var(--text-secondary);
@@ -641,9 +646,10 @@
       .hero-actions { justify-content: center; }
     }
     @media (max-width: 640px) {
-      header { padding: 48px 0 36px; }
-      .logo { font-size: 48px; }
-      .tagline { font-size: 16px; }
+      header { padding: 56px 0 40px; }
+      .logo { font-size: 52px; }
+      .tagline { font-size: 17px; }
+      .hero-actions .btn.primary { font-size: 15px; padding: 13px 24px; }
       .menubar-mock { padding-bottom: 260px; }
       .mac-menubar { position: relative; }
       .mac-menubar-left span:not(.menu-icon) { display: none; }
