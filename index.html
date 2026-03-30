@@ -639,6 +639,49 @@
     }
     .cookie-settings-link:hover { text-decoration: underline; }
 
+    /* ─── SUPPORT WIDGET ──────────────────────────── */
+    .support-widget {
+      position: fixed;
+      right: 20px;
+      bottom: calc(16px + env(safe-area-inset-bottom));
+      z-index: 75;
+      display: inline-flex;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .support-widget:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    }
+    .support-widget:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .support-widget img {
+      display: block;
+      width: 152px;
+      height: auto;
+    }
+    .support-widget .suppi-dark { display: none; }
+    html.dark .support-widget .suppi-light { display: none; }
+    html.dark .support-widget .suppi-dark { display: block; }
+    @media (max-width: 640px) {
+      .support-widget {
+        right: 12px;
+        bottom: 12px;
+      }
+    }
+    .cookie-banner.show ~ .support-widget {
+      bottom: 96px;
+    }
+    @media (max-width: 640px) {
+      .cookie-banner.show ~ .support-widget {
+        bottom: 152px;
+      }
+    }
+
     /* ─── RESPONSIVE ──────────────────────────────── */
     @media (max-width: 719px) {
       .hero-text { text-align: center; }
@@ -917,6 +960,19 @@
       <button type="button" class="btn primary" id="cookie-accept">Accept analytics</button>
     </div>
   </div>
+
+  <a
+    href="https://suppi.pl/rafalpawelec"
+    class="support-widget"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Postaw mi kawę przez Suppi"
+    data-track-event="support_click"
+    data-track-location="floating_widget"
+  >
+    <img class="suppi-light" width="152" src="https://suppi.pl/api/widget/button.svg?fill=0071e3&textColor=ffffff" alt="Postaw mi kawę na Suppi" />
+    <img class="suppi-dark" width="152" src="https://suppi.pl/api/widget/button.svg?fill=0a84ff&textColor=ffffff" alt="Postaw mi kawę na Suppi" />
+  </a>
 
   <script>
     (function() {
